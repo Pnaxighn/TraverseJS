@@ -5,6 +5,23 @@
     <script type="text/javascript" src="../Traverse.js"></script>
     <script type="text/javascript" src="Garden.js"></script>
     <script type="text/javascript">
+	with ( TraverseCore ) {
+/*
+		new Action("foo", [function(){alert('foo');}]);
+		new Action("bar", [function(){alert('bar');}], [function(){return true;}]);
+		new Action("baz", [function(){alert('baz');}], [function(){return false;}]);
+		ResolveAction("foo").Run();
+		ResolveAction("bar").Run();
+		ResolveAction("baz").Run();
+*/
+
+/*
+		CreateChoice( "Barbara Marries", [ { "Name":"Charles", Results:[] }, { "Name":"William", Results:[] } ] );
+		new Action( "Charles Cheats", [ function(){alert('cheated!');} ], [ ChoiceMade( "Barbara Marries Charles" ) ] );
+		ResolveAction( "Barbara Marries Charles" ).Run();
+		ResolveAction( "Charles Cheats" ).Run();
+*/
+	}
       Traverse.start(document.getElementById("choices"));
     </script>
   </head>
