@@ -45,6 +45,12 @@ var TraverseCore = {
 			function() { TraverseCore.ChoiceResults[fullName] = true; }
 		];
 	},
+	GetOnceSetter:function( name )
+	{
+		return [
+			function() { TraverseCore.ChoiceResults[name] = true; }
+		];
+	},
 	GetChoicePredicates:function( name )
 	{
 		return [ TraverseCore.ChoiceNotMade( name ) ];
@@ -56,6 +62,21 @@ var TraverseCore = {
 	ChoiceNotMade:function( name )
 	{
 		return function(){ return !TraverseCore.ChoiceResults[name]; };
+	},
+	GetAllEligibleActions:function()
+	{
+		var result = [];
+		for ( var actName in TraverseCore.ActionTable )
+		{
+			var act = TraverseCore.ResolveAction( actName );
+			if ( act.IsEligible() )
+				result.push( act );
+		}
+		return result;
+	},
+	GetOnceAction:function( name, results, predicates )
+	{
+		new TraverseCore.Action( name, results.concat( TraverseCore.GetOnceSetter( name ) ), predicates.concat( TraverseCore.ChoiceNotMade( name ) ) );
 	}
 };
 

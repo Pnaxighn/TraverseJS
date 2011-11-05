@@ -15,12 +15,22 @@
 		ResolveAction("baz").Run();
 */
 
-/*
-		CreateChoice( "Barbara Marries", [ { "Name":"Charles", Results:[] }, { "Name":"William", Results:[] } ] );
-		new Action( "Charles Cheats", [ function(){alert('cheated!');} ], [ ChoiceMade( "Barbara Marries Charles" ) ] );
+function WhatNow()
+{
+	var avail = GetAllEligibleActions();
+	var s ="";
+	for ( var i in avail )
+		s += avail[i].Name + "\n";
+	alert( s );
+}
+
+		CreateChoice( "Barbara Marries", [ { "Name":"Charles", Results:[] }, { "Name":"William", Results:[] } ], [] );
+		GetOnceAction( "Charles Cheats", [ function(){alert('cheated!');} ], [ ChoiceMade( "Barbara Marries Charles" ) ] );
+		WhatNow()
 		ResolveAction( "Barbara Marries Charles" ).Run();
+		WhatNow()
 		ResolveAction( "Charles Cheats" ).Run();
-*/
+		WhatNow()
 	}
       Traverse.start(document.getElementById("choices"));
     </script>
