@@ -4,7 +4,7 @@
     <title>A Garden of Forking Paths</title>
     <script type="text/javascript" src="jquery-1.7.js"></script>
     <script type="text/javascript" src="../Traverse.js"></script>
-    <script type="text/javascript" src="Garden.js"></script>
+<!--    <script type="text/javascript" src="Garden.js"></script> -->
     <script type="text/javascript">
 	with ( TraverseCore ) {
 /*
@@ -19,13 +19,31 @@
 		CreateChoice( "Barbara Marries", [ { "Name":"Charles", Results:[] }, { "Name":"William", Results:[] } ], [] );
 		GetOnceAction( "Charles Cheats", [ function(){alert('cheated!');} ], [ ChoiceMade( "Barbara Marries Charles" ) ] );
 
-    var $choices = $('#choices');
-    $choices.empty();
-    for (var action in GetEligibleActions()) {
-      var $actionButton = $('<button>' + action.Name() + '</button>');
-      var $listItem = $('<li></li>').append($actionButton);
-      $choices.append($listItem);
+    var getActionButtonClicked = function(action) {
+      return function() {
+        action.Run(); 
+        renderActionList();
+      };
+    };
+
+    var renderActionList = function() {
+      var $choices = $('#choices');
+      $choices.empty();
+      var avail = GetAllEligibleActions();
+      for (var i in avail) {
+        var action = avail[i];
+        
+        var $actionButton = $('<button>' + action.Name + '</button>');
+        $actionButton.bind('click', getActionButtonClicked(action));
+        
+        var $listItem = $('<li></li>').append($actionButton);
+        $choices.append($listItem);
+      }
     }
+
+    $(function() {
+      renderActionList();
+    });
 	}
 //      Traverse.start(document.getElementById("choices"));
     </script>
