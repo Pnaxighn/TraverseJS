@@ -12,13 +12,16 @@
 
     with (TraverseCore) {      
       if ( ChoiceMade("Barbara Marries William")() ) {
-        if ( ChoiceMade("They Divorce")() ) {
+        if ( ChoiceMade("They Stay Together")() ) {
           changes += "\nBarbara and William are divorced";
         }
         if ( ChoiceMade("Virginia Moves In With the Couple") ) {
           changes += "\nBarbara and William put Virginia in a nursing home";
         }
       } else {
+        if ( ChoiceMade("They Divorce")() ) {
+          changes += "\nBarbara and Charles are still together";
+        }
         if ( ChoiceMade("Barbara Cheats")() && ChoiceMade("Charles Cheats")() ) {
           changes += "\nBarbara did not cheat on Charles, but he cheated on her";
           if ( ChoiceMade("They Put Virginia In a Nursing Home") ) {
@@ -101,7 +104,13 @@
         ) ] );
     CreateChoice( "They Meet Jason",
       [ { "Name":"They Accept Jason", Results:[] }, { "Name":"They Reject Jason", Results:[] } ],
-      []);
+      [ ChoiceMade("They Decide Where to Send Stephanie") ]);
+    CreateChoice( "Jason and Stephanie Decide What to Do With Their Parents",
+      [ { "Name":"They Leave Their Parents to Fend for Themselves", Results:[] },
+        { "Name":"They Support Their Parents Financially", Results:[] },
+        { "Name":"They Allow Their Parents to Move In With Them", Results:[] },
+        { "Name":"They Put Their Parents in a Nursing Home", Results:[] }],
+      [ ChoiceMade( "They Meet Jason" ) ] );
 		
 		var renderPastChoices = function() {
 		  var $pastChoices = $('#pastChoices');
