@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Garden of Forking Paths</title>
+    <title>A Garden of Forking Paths</title>
+    <script type="text/javascript" src="jquery-1.7.js"></script>
     <script type="text/javascript" src="../Traverse.js"></script>
     <script type="text/javascript" src="Garden.js"></script>
     <script type="text/javascript">
@@ -15,17 +16,22 @@
 		ResolveAction("baz").Run();
 */
 
-/*
 		CreateChoice( "Barbara Marries", [ { "Name":"Charles", Results:[] }, { "Name":"William", Results:[] } ] );
 		new Action( "Charles Cheats", [ function(){alert('cheated!');} ], [ ChoiceMade( "Barbara Marries Charles" ) ] );
-		ResolveAction( "Barbara Marries Charles" ).Run();
-		ResolveAction( "Charles Cheats" ).Run();
-*/
+
+    var $choices = $('#choices');
+    $choices.empty();
+    for (var action in GetEligibleActions()) {
+      var $actionButton = $('<button>' + action.Name() + '</button>');
+      var $listItem = $('<li></li>').append($actionButton);
+      $choices.append($listItem);
+    }
 	}
-      Traverse.start(document.getElementById("choices"));
+//      Traverse.start(document.getElementById("choices"));
     </script>
   </head>
   <body>
-    <div id="choices"></div>
+    <h1>A Garden of Forking Paths</h1>
+    <ul id="choices"></ul>
   </body>
 </html>
