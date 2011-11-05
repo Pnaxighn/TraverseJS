@@ -40,6 +40,8 @@ var TraverseCore = {
 	},
 	GetChoiceSetter:function( name, fullName )
 	{
+		TraverseCore.ChoiceResults[name] = false;
+		TraverseCore.ChoiceResults[fullName] = false;
 		return [
 			function() { TraverseCore.ChoiceResults[name] = true; },
 			function() { TraverseCore.ChoiceResults[fullName] = true; }
@@ -47,6 +49,7 @@ var TraverseCore = {
 	},
 	GetOnceSetter:function( name )
 	{
+		TraverseCore.ChoiceResults[name] = false;
 		return [
 			function() { TraverseCore.ChoiceResults[name] = true; }
 		];
