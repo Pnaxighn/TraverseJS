@@ -1,90 +1,108 @@
 var TraverseCore = {
 	ActionTable:{},
 	ChoiceResults:{},
-	Action:function( name, results, predicates )
+	Action:null,
+	Action_Run:null,
+	Action_IsEligible:null,
+	ResolveAction:null,
+	GetOnceSetter:null,
+	ChoiceMade:null,
+	ChoiceNotMade:null,
+	GetAllEligibleActions:null,
+	GetOnceAction:null
+};
+with ( TraverseCore )
+{
+	Action = function( name, results, predicates )
 	{
 		this.Name = name;
 		this.Results = results;
 		this.Predicates = predicates;
-		TraverseCore.ActionTable[name] = this;
-	},
-	Action_Run:function()
+		ActionTable[name] = this;
+	};
+	Action_Run = function()
 	{
 		if ( this.IsEligible() )
 			for ( var i in this.Results )
 				this.Results[i]();
 		else
 			throw "Can't run " + this.Name;
-	},
-	Action_IsEligible:function()
+	};
+	Action_IsEligible = function()
 	{
 		var OK = true;
 		if ( this.Predicates != null )
 			for ( var i in this.Predicates )
 				OK = OK && this.Predicates[i]();
 		return OK;
-	},
-	ResolveAction:function(nameOrAction)
+	};
+	ResolveAction = function(nameOrAction)
 	{
 		if ( typeof( nameOrAction ) == 'string' )
-			return TraverseCore.ActionTable[nameOrAction];
+			return ActionTable[nameOrAction];
 		return nameOrAction;
-	},
-	CreateChoice:function( name, actionInitializers, predicates )
+	};
+	GetOnceSetter = function( name )
 	{
-		for ( var i in actionInitializers )
-		{
-			var fullName = name + " " + actionInitializers[i].Name;
-			new TraverseCore.Action( fullName, actionInitializers[i].Results.concat( TraverseCore.GetChoiceSetter( name, fullName ) ), predicates.concat( TraverseCore.GetChoicePredicates( name ) ) );
-		}
-	},
-	GetChoiceSetter:function( name, fullName )
-	{
-		TraverseCore.ChoiceResults[name] = false;
-		TraverseCore.ChoiceResults[fullName] = false;
+		ChoiceResults[name] = false;
 		return [
-			function() { TraverseCore.ChoiceResults[name] = true; },
-			function() { TraverseCore.ChoiceResults[fullName] = true; }
+			function() { ChoiceResults[name] = true; }
 		];
-	},
-	GetOnceSetter:function( name )
+	};
+	ChoiceMade = function( name )
 	{
-		TraverseCore.ChoiceResults[name] = false;
-		return [
-			function() { TraverseCore.ChoiceResults[name] = true; }
-		];
-	},
-	GetChoicePredicates:function( name )
+		return function(){ return ChoiceResults[name]; };
+	};
+	ChoiceNotMade = function( name )
 	{
-		return [ TraverseCore.ChoiceNotMade( name ) ];
-	},
-	ChoiceMade:function( name )
-	{
-		return function(){ return TraverseCore.ChoiceResults[name]; };
-	},
-	ChoiceNotMade:function( name )
-	{
-		return function(){ return !TraverseCore.ChoiceResults[name]; };
-	},
-	GetAllEligibleActions:function()
+		return function(){ return !ChoiceResults[name]; };
+	};
+	GetAllEligibleActions = function()
 	{
 		var result = [];
-		for ( var actName in TraverseCore.ActionTable )
+		for ( var actName in ActionTable )
 		{
-			var act = TraverseCore.ResolveAction( actName );
+			var act = ResolveAction( actName );
 			if ( act.IsEligible() )
 				result.push( act );
 		}
 		return result;
-	},
-	GetOnceAction:function( name, results, predicates )
+	};
+	GetOnceAction = function( name, results, predicates )
 	{
-		new TraverseCore.Action( name, results.concat( TraverseCore.GetOnceSetter( name ) ), predicates.concat( TraverseCore.ChoiceNotMade( name ) ) );
-	}
-};
-
-with ( TraverseCore )
-{
+		new Action( name, results.concat( GetOnceSetter( name ) ), predicates.concat( ChoiceNotMade( name ) ) );
+	};
 	Action.prototype.Run = Action_Run;
 	Action.prototype.IsEligible = Action_IsEligible;
 }
+
+var TraverseHL = {
+	CreateChoice:null,
+	GetChoiceSetter:null,
+	GetChoicePredicates:null,
+};
+
+with ( TraverseHL )
+{
+	CreateChoice = function( name, actionInitializers, predicates )
+	{
+		for ( var i in actionInitializers )
+		{
+			var fullName = actionInitializers[i].Name;
+			new TraverseCore.Action( fullName, actionInitializers[i].Results.concat( GetChoiceSetter( name, fullName ) ), predicates.concat( GetChoicePredicates( name ) ) );
+		}
+	};
+	GetChoiceSetter = function( name, fullName )
+	{
+		return TraverseCore.GetOnceSetter( name ).concat( TraverseCore.GetOnceSetter( fullName ) );
+	};
+	GetChoicePredicates = function( name )
+	{
+		return [ TraverseCore.ChoiceNotMade( name ) ];
+	};
+}
+
+var TraverseDSL = {
+
+};
+
