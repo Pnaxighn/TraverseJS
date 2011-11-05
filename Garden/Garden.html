@@ -6,7 +6,41 @@
     <script type="text/javascript" src="../Traverse.js"></script>
 <!--    <script type="text/javascript" src="Garden.js"></script> -->
     <script type="text/javascript">
+  
+  function actBreak() {
+    var changes = "";
+
+    with (TraverseCore) {      
+      if ( ChoiceMade("Barbara Marries William")() ) {
+        if ( ChoiceMade("They Divorce")() ) {
+          changes += "\nBarbara and William are divorced";
+        }
+        if ( ChoiceMade("Virginia Moves In With the Couple") ) {
+          changes += "\nBarbara and William put Virginia in a nursing home";
+        }
+      } else {
+        if ( ChoiceMade("Barbara Cheats")() && ChoiceMade("Charles Cheats")() ) {
+          changes += "\nBarbara did not cheat on Charles, but he cheated on her";
+          if ( ChoiceMade("They Put Virginia In a Nursing Home") ) {
+            changes += "\nVirginia moved in with Barbara and Charles";
+          }
+        } else if ( !(ChoiceMade("Barbara Cheats")()) && !(ChoiceMade("Charles Cheats")()) ) {
+          changes += "\nBarbara cheated on Charles, but he remained faithful to her";
+          if ( ChoiceMade("Virginia Moves In With the Couple") ) {
+            changes += "\nBarbara and Charles put Virginia in a nursing home";
+          }
+        }
+      }
+      
+      if (changes != "") {
+        alert("Some chapters are missing from the second half of the book!  You sense that things are different:\n"+changes);
+      }
+    }
+  }
+  
+  
 	with ( TraverseCore ) {
+	  with ( TraverseHL ) {
 /*
 		new Action("foo", [function(){alert('foo');}]);
 		new Action("bar", [function(){alert('bar');}], [function(){return true;}]);
@@ -16,13 +50,75 @@
 		ResolveAction("baz").Run();
 */
 
-		CreateChoice( "Barbara Marries", [ { "Name":"Charles", Results:[] }, { "Name":"William", Results:[] } ], [] );
-		GetOnceAction( "Charles Cheats", [ function(){alert('cheated!');} ], [ ChoiceMade( "Barbara Marries Charles" ) ] );
+    function OrPredicate( Predicate1, Predicate2 ) {
+      return function() {
+        return (Predicate1() || Predicate2());
+      }
+    }
+    
+    function AndPredicate( Predicate1, Predicate2 ) {
+      return function() {
+        return (Predicate1() && Predicate2());
+      }
+    }
+    
+		CreateChoice( "Barbara Marries Somebody", 
+		  [ { "Name":"Barbara Marries Charles", Results:[] }, { "Name":"Barbara Marries William", Results:[] } ],
+		  [] );
+//		GetOnceAction( "Charles Cheats", [ function(){alert('cheated!');} ], [ ChoiceMade( "Barbara Marries Charles" ) ] );
+		CreateChoice( "Charles Chooses Whether to Cheat", 
+		  [ { "Name":"Charles Cheats", Results:[] }, { "Name":"Charles Doesn't Cheat", Results:[] } ], 
+		  [ ChoiceMade("Barbara Marries Charles") ]);
+		CreateChoice( "Barbara Chooses Whether to Cheat", 
+		  [ { "Name":"Barbara Cheats", Results:[] }, { "Name":"Barbara Doesn't Cheat", Results:[] } ], 
+		  [ ChoiceMade("Barbara Marries Somebody") ]);
+		CreateChoice( "They Choose Whether to Divorce", 
+		  [ { "Name":"They Divorce", Results:[]}, { "Name":"They Stay Together", Results:[] } ],
+		  [ OrPredicate( 
+		      AndPredicate( ChoiceMade("Charles Chooses Whether to Cheat"), ChoiceMade("Barbara Chooses Whether to Cheat") ),
+		      AndPredicate( ChoiceMade("Barbara Marries William"), ChoiceMade("Barbara Chooses Whether to Cheat") )
+		    ) ] );
+		CreateChoice( "They Decide What to Do With Virginia", 
+		  [ { "Name":"Virginia Moves In With the Couple", Results:[actBreak]}, { "Name":"They Put Virginia In a Nursing Home", Results:[actBreak] } ],
+		  [ ChoiceMade("They Choose Whether to Divorce") ]);
+		CreateChoice( "Charles Decides Whether to Lend Barbara Money",
+		  [ { "Name":"Charles Lends Her Money", Results:[]}, { "Name":"Charles Doesn't Lend Her Money", Results:[] } ],
+		  [ ChoiceMade("They Decide What to Do With Virginia"), ChoiceMade("Barbara Marries William") ] );
+		CreateChoice( "William Decides Whether to Lend Barbara Money",
+		  [ { "Name":"William Lends Her Money", Results:[]}, { "Name":"William Doesn't Lend Her Money", Results:[] } ],
+		  [ ChoiceMade("They Decide What to Do With Virginia"), ChoiceMade("Barbara Marries Charles"), ChoiceMade("They Divorce") ] );
+		CreateChoice( "William Decides Whether to Lend Them Money",
+		  [ { "Name":"William Lends Them Money", Results:[]}, { "Name":"William Doesn't Lend Them Money", Results:[] } ],
+		  [ ChoiceMade("They Decide What to Do With Virginia"), ChoiceMade("Barbara Marries Charles"), ChoiceMade("They Stay Together") ] );
+    CreateChoice( "They Decide Where to Send Stephanie",
+      [ { "Name":"They Send Stephanie to Rehab", Results:[] }, { "Name":"They Send Stephanie to Jail", Results:[] } ],
+      [ OrPredicate(
+          OrPredicate(
+            ChoiceMade("Charles Decides Whether to Lend Barbara Money"),
+            ChoiceMade("William Decides Whether to Lend Barbara Money")
+          ),
+          ChoiceMade("William Decides Whether to Lend Them Money")
+        ) ] );
+    CreateChoice( "They Meet Jason",
+      [ { "Name":"They Accept Jason", Results:[] }, { "Name":"They Reject Jason", Results:[] } ],
+      []);
+		
+		var renderPastChoices = function() {
+		  var $pastChoices = $('#pastChoices');
+		  $pastChoices.empty();
+		  
+		  for (var choice in ChoiceResults) {
+		    if (ChoiceResults[choice]) {
+		      $pastChoices.append("<li>" + choice + "</li>");
+		    }
+		  }
+		}
 
     var getActionButtonClicked = function(action) {
       return function() {
         action.Run(); 
         renderActionList();
+        renderPastChoices();
       };
     };
 
@@ -45,11 +141,13 @@
       renderActionList();
     });
 	}
+}
 //      Traverse.start(document.getElementById("choices"));
     </script>
   </head>
   <body>
     <h1>A Garden of Forking Paths</h1>
     <ul id="choices"></ul>
+    <ul id="pastChoices"></ul>
   </body>
 </html>
