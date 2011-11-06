@@ -88,6 +88,22 @@ with ( TraverseDSL ) {
       ));
 }
 
+var Action = Backbone.Model.extend({
+  initialize: function(playthrough, traverseAction) {
+    this.playthrough = playthrough;
+    this.traverseAction = traverseAction;
+  },
+  
+  name: function() {
+    return this.traverseAction.Name;
+  },
+  
+  run: function() {
+    this.traverseAction.Run();
+    this.playthrough.trigger("eligibleActionsChange");
+  }
+});
+
 var Playthrough = Backbone.Model.extend({
   initialize: function() {
     // this is where init code will go once we can support multiple playthroughs
@@ -98,52 +114,55 @@ var Playthrough = Backbone.Model.extend({
   },
   
   eligibleActions: function() {
-    return _.values(TraverseCore.GetAllEligibleActions());
+    return _.map(TraverseCore.GetAllEligibleActions(),
+      function (action) { return new Action(this, action); }, this);
   }
 });
 
-
-
-
-		
-var renderPastChoices = function() {
-  var $pastChoices = $('#pastChoices');
-  $pastChoices.empty();
+var ActionView = Backbone.View.extend({
   
-  with (TraverseCore) {
-    for (var choice in ChoiceResults) {
-      if (ChoiceResults[choice]) {
-        $pastChoices.append("<li>" + choice + "</li>");
-      }
-    }
+  tagName: "button",
+  className: "action",
+  
+  events: {
+    "click": "clicked"
+  },
+  
+  render: function() {
+    $(this.el).html(this.model.name());
+    return this;
+  },
+  
+  clicked: function() {
+    this.model.run();
   }
-}
+});
 
-var getActionButtonClicked = function(action) {
-  return function() {
-    action.Run(); 
-    renderActionList();
-    renderPastChoices();
-  };
-};
+var EligibleActionsView = Backbone.View.extend({
+  
+  tagName: "ul",
+  className: "choices",
+  
+  initialize: function() {
+    this.model.bind("eligibleActionsChange", this.render, this);
+  },
+  
+  render: function() {
+    $(this.el).empty();
 
-var renderActionList = function() {
-  with (TraverseCore) {
-    var $choices = $('#choices');
-    $choices.empty();
-    var avail = GetAllEligibleActions();
-    for (var i in avail) {
-      var action = avail[i];
-      
-      var $actionButton = $('<button>' + action.Name + '</button>');
-      $actionButton.bind('click', getActionButtonClicked(action));
-      
-      var $listItem = $('<li></li>').append($actionButton);
-      $choices.append($listItem);
-    }
+    _.each(this.model.eligibleActions(), function(action) {
+
+      var actionView = new ActionView({model: action});
+      var listItem = $('<li></li>').append(actionView.render().el);
+      $(this.el).append(listItem);
+
+    }, this);
+
+    return this;
   }
-}
+});
 
 $(function() {
-  renderActionList();
+  var playthrough = new Playthrough();
+  new EligibleActionsView({ model: playthrough, el: $('.choices').get(0) }).render();
 });
