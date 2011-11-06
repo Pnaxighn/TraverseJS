@@ -128,11 +128,17 @@ with ( TraverseDSL )
 {
 	Options = function() {
 		var result = [];
-		for ( var i = 0 ; i < arguments.length ; i++ )
-			if ( typeof( arguments[i] ) == 'string' )
-				result.push( { "Name":arguments[i], "Results":[] } );
+		var myOptions;
+		if ( Array.isArray( arguments[0] ) )
+			myOptions = arguments[0];
+		else
+			myOptions = Array.prototype.slice.call(arguments);
+		for ( var i = 0 ; i < myOptions.length ; i++ )
+			if ( typeof( myOptions[i] ) == 'string' )
+				result.push( { "Name":myOptions[i], "Results":[] } );
 			else
-				result.push( arguments[i] );
+				result.push( myOptions[i] );
+		return result;
 	};
 	ResolvePredicate = function( p )
 	{
@@ -152,7 +158,7 @@ with ( TraverseDSL )
 		while ( typeof( myArgs[ myArgs.length - 1 ] ) == 'function' )
 			results.push( myArgs.pop() );
 
-		return CreateChoice( name, Options( myArgs ), results );
+		return TraverseHL.CreateChoice( name, Options( myArgs ), results );
 	};
 	After = function( maybePredicate, maybeActions, maybeResult )
 	{
