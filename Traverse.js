@@ -181,8 +181,8 @@ with ( TraverseDSL )
 		var predicates = arguments;
 		return function()
 		{
-			for ( i=0; i < predicates.length; i++ )
-				if ( TraverseDSL.ResolvePredicate( predicates[ i ] )() )
+			for ( var i = 0; i < predicates.length; i++ )
+				if ( ResolvePredicate( predicates[ i ] )() )
 					return true;
 			return false;
 		};
@@ -194,8 +194,8 @@ with ( TraverseDSL )
 		var predicates = Array.prototype.slice.call( arguments );
 		return function()
 		{
-			for ( i=0; i < predicates.length ; i++ )
-				if ( !TraverseDSL.ResolvePredicate( predicates[ i ] )() )
+			for ( var i = 0; i < predicates.length ; i++ )
+				if ( !ResolvePredicate( predicates[ i ] )() )
 					return false;
 			return true;
 		};
