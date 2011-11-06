@@ -1,4 +1,4 @@
-function actBreak() {
+var actBreak = function() {
   var changes = "";
 
   with (TraverseCore) {      
@@ -32,7 +32,7 @@ function actBreak() {
   }
 }
   
-  
+// Game rules
 with ( TraverseDSL ) {
   Choice( "Barbara Marries Somebody", "Barbara Marries Charles", "Barbara Marries William" );
 
@@ -87,46 +87,64 @@ with ( TraverseDSL ) {
       Option("They Put Charles in a Nursing Home", OnlyIf(BothOf("Barbara Marries Charles", "They Divorce")),
               
       ));*/
-		
-  var renderPastChoices = function() {
-    var $pastChoices = $('#pastChoices');
-    $pastChoices.empty();
-    
-    with (TraverseCore) {
-      for (var choice in ChoiceResults) {
-        if (ChoiceResults[choice]) {
-          $pastChoices.append("<li>" + choice + "</li>");
-        }
-      }
-    }
-  }
-
-  var getActionButtonClicked = function(action) {
-    return function() {
-      action.Run(); 
-      renderActionList();
-      renderPastChoices();
-    };
-  };
-
-  var renderActionList = function() {
-    with (TraverseCore) {
-      var $choices = $('#choices');
-      $choices.empty();
-      var avail = GetAllEligibleActions();
-      for (var i in avail) {
-        var action = avail[i];
-        
-        var $actionButton = $('<button>' + action.Name + '</button>');
-        $actionButton.bind('click', getActionButtonClicked(action));
-        
-        var $listItem = $('<li></li>').append($actionButton);
-        $choices.append($listItem);
-      }
-    }
-  }
-
-  $(function() {
-    renderActionList();
-  });
 }
+
+var Playthrough = Backbone.Model.extend({
+  initialize: function() {
+    // this is where init code will go once we can support multiple playthroughs
+  },
+  
+  pastChoices: function() {
+    return _.values(TraverseCore.ChoiceResults);
+  },
+  
+  eligibleActions: function() {
+    return _.values(TraverseCore.GetAllEligibleActions());
+  }
+});
+
+
+
+
+		
+var renderPastChoices = function() {
+  var $pastChoices = $('#pastChoices');
+  $pastChoices.empty();
+  
+  with (TraverseCore) {
+    for (var choice in ChoiceResults) {
+      if (ChoiceResults[choice]) {
+        $pastChoices.append("<li>" + choice + "</li>");
+      }
+    }
+  }
+}
+
+var getActionButtonClicked = function(action) {
+  return function() {
+    action.Run(); 
+    renderActionList();
+    renderPastChoices();
+  };
+};
+
+var renderActionList = function() {
+  with (TraverseCore) {
+    var $choices = $('#choices');
+    $choices.empty();
+    var avail = GetAllEligibleActions();
+    for (var i in avail) {
+      var action = avail[i];
+      
+      var $actionButton = $('<button>' + action.Name + '</button>');
+      $actionButton.bind('click', getActionButtonClicked(action));
+      
+      var $listItem = $('<li></li>').append($actionButton);
+      $choices.append($listItem);
+    }
+  }
+}
+
+$(function() {
+  renderActionList();
+});
