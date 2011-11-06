@@ -67,26 +67,25 @@ with ( TraverseDSL ) {
   After( "They Decide Where to Send Stephanie",
     Choice( "They Meet Jason", "They Accept Jason", "They Reject Jason" ));
       
-/*  After( "They Meet Jason",
+  After( "They Meet Jason",
     Choice( "Jason and Stephanie Decide What to Do With Their Parents",
       "They Leave Their Parents to Fend for Themselves",
       "They Support Their Parents Financially",
       Option("They Support Barbara Financially", OnlyIf("They Divorce")),
-      Option("They Support William Financially", OnlyIf(BothOf("Barbara Marries William", "They Divorce")),
-      Option("They Support Charles Financially", OnlyIf(BothOf("Barbara Marries Charles", "They Divorce")),
+      Option("They Support William Financially", OnlyIf(BothOf("Barbara Marries William", "They Divorce"))),
+      Option("They Support Charles Financially", OnlyIf(BothOf("Barbara Marries Charles", "They Divorce"))),
       
       Option("They Allow Their Parents to Move In With Them", OnlyIf("They Stay Together")),
       Option("They Allow Barbara to Move In With Them", OnlyIf("They Divorce")),
-      Option("They Allow William to Move In With Them", OnlyIf(BothOf("Barbara Marries William", "They Divorce")),
-      Option("They Allow Charles to Move In With Them", OnlyIf(BothOf("Barbara Marries Charles", "They Divorce")),
+      Option("They Allow William to Move In With Them", OnlyIf(BothOf("Barbara Marries William", "They Divorce"))),
+      Option("They Allow Charles to Move In With Them", OnlyIf(BothOf("Barbara Marries Charles", "They Divorce"))),
       
       Option("They Put Their Parents in a Nursing Home", OnlyIf("They Stay Together")),
       Option("They Put Their Parents in Separate Nursing Homes", OnlyIf("They Divorce")),
       Option("They Put Barbara in a Nursing Home", OnlyIf("They Divorce")),
-      Option("They Put William in a Nursing Home", OnlyIf(BothOf("Barbara Marries William", "They Divorce")),
-      Option("They Put Charles in a Nursing Home", OnlyIf(BothOf("Barbara Marries Charles", "They Divorce")),
-              
-      ));*/
+      Option("They Put William in a Nursing Home", OnlyIf(BothOf("Barbara Marries William", "They Divorce"))),
+      Option("They Put Charles in a Nursing Home", OnlyIf(BothOf("Barbara Marries Charles", "They Divorce")))
+      ));
 		
   var renderPastChoices = function() {
     var $pastChoices = $('#pastChoices');
