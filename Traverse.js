@@ -148,7 +148,7 @@ with ( TraverseDSL )
 	};
 	Choice = function( name ) {
 		var results = [];
-		var myArgs = arguments.slice(1);
+		var myArgs = Array.prototype.slice.call(arguments).slice(1);
 		while ( typeof( myArgs[ myArgs.length - 1 ] ) == 'function' )
 			results.push( myArgs.pop() );
 
