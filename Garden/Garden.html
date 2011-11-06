@@ -105,32 +105,6 @@
       [ ChoiceMade( "They Meet Jason" ) ] );
 */
 
-    function AnyOf() {
-      var predicates = arguments;
-      return function() {
-        for (i=0; i<predicates.length; i++) {
-          if (TraverseDSL.ResolvePredicate(predicates[i])()) {
-            return true;
-          }
-        }
-        return false;
-      }
-    }
-    EitherOf = AnyOf;
-    
-    function AllOf() {
-      var predicates = Array.prototype.slice.call(arguments);
-      return function() {
-        for (i=0; i<predicates.length; i++) {
-          if (!TraverseDSL.ResolvePredicate(predicates[i])()) {
-            return false;
-          }
-        }
-        return true;
-      }
-    }
-    BothOf = AllOf;
-
     Choice( "Barbara Marries Somebody", "Barbara Marries Charles", "Barbara Marries William" );
 
     After( "Barbara Marries Somebody",

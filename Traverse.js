@@ -121,7 +121,11 @@ var TraverseDSL = {
 	After:null,
 	Options:null,
 	ResolvePredicate:null,
-	AndThen:null
+	AndThen:null,
+	AnyOf:null,
+	AllOf:null,
+	BothOf:null,
+	EitherOf:null
 };
 
 with ( TraverseDSL )
@@ -172,4 +176,29 @@ with ( TraverseDSL )
 				as[i].AddResult( r );
 		}
 	}
+	AnyOf = function()
+	{
+		var predicates = arguments;
+		return function()
+		{
+			for ( i=0; i < predicates.length; i++ )
+				if ( TraverseDSL.ResolvePredicate( predicates[ i ] )() )
+					return true;
+			return false;
+		};
+	}
+	EitherOf = AnyOf;
+	
+	AllOf = function()
+	{
+		var predicates = Array.prototype.slice.call( arguments );
+		return function()
+		{
+			for ( i=0; i < predicates.length ; i++ )
+				if ( !TraverseDSL.ResolvePredicate( predicates[ i ] )() )
+					return false;
+			return true;
+		};
+	}
+	BothOf = AllOf;	
 };
