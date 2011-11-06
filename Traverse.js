@@ -4,6 +4,8 @@ var TraverseCore = {
 	Action:null,
 	Action_Run:null,
 	Action_IsEligible:null,
+	Action_AddResult:null,
+	Action_AddPredicate:null,
 	ResolveAction:null,
 	GetOnceSetter:null,
 	ChoiceMade:null,
@@ -35,6 +37,14 @@ with ( TraverseCore )
 			for ( var i in this.Predicates )
 				OK = OK && this.Predicates[i]();
 		return OK;
+	};
+	Action_AddResult = function( f )
+	{
+		this.Results.push( f );
+	};
+	Action_AddPredicate = function ( f )
+	{
+		this.Predicates.push( f );
 	};
 	ResolveAction = function(nameOrAction)
 	{
@@ -74,6 +84,8 @@ with ( TraverseCore )
 	};
 	Action.prototype.Run = Action_Run;
 	Action.prototype.IsEligible = Action_IsEligible;
+	Action.prototype.AddResult = Action_AddResult;
+	Action.prototype.AddPredicate = Action_AddPredicate;
 }
 
 var TraverseHL = {
@@ -86,11 +98,13 @@ with ( TraverseHL )
 {
 	CreateChoice = function( name, actionInitializers, predicates )
 	{
+		var results = [];
 		for ( var i in actionInitializers )
 		{
 			var fullName = actionInitializers[i].Name;
-			new TraverseCore.Action( fullName, actionInitializers[i].Results.concat( GetChoiceSetter( name, fullName ) ), predicates.concat( GetChoicePredicates( name ) ) );
+			results.push( new TraverseCore.Action( fullName, actionInitializers[i].Results.concat( GetChoiceSetter( name, fullName ) ), predicates.concat( GetChoicePredicates( name ) ) ) );
 		}
+		return results;
 	};
 	GetChoiceSetter = function( name, fullName )
 	{
@@ -103,6 +117,53 @@ with ( TraverseHL )
 }
 
 var TraverseDSL = {
-
+	Choice:null,
+	After:null,
+	Options:null,
+	ResolvePredicate:null,
+	AndThen:null
 };
 
+with ( TraverseDSL )
+{
+	Options = function() {
+		var result = [];
+		for ( var i = 0 ; i < arguments.length ; i++ )
+			if ( typeof( arguments[i] ) == 'string' )
+				result.push( { "Name":arguments[i], "Results":[] } );
+			else
+				result.push( arguments[i] );
+	};
+	ResolvePredicate = function( p )
+	{
+		if ( typeof(p) == 'string' )
+			return TraverseCore.ChoiceMade( p );
+		return p;
+	};
+	AndThen = function ( r )
+	{
+		if ( typeof(r) == 'string' )
+			return TraverseCore.GetOnceSetter( r )[0];
+		return r;
+	};
+	Choice = function( name ) {
+		var results = [];
+		var myArgs = arguments.slice(1);
+		while ( typeof( myArgs[ myArgs.length - 1 ] ) == 'function' )
+			results.push( myArgs.pop() );
+
+		return CreateChoice( name, Options( myArgs ), results );
+	};
+	After = function( maybePredicate, maybeActions, maybeResult )
+	{
+		var p = ResolvePredicate( maybePredicate );
+		var as = Array.isArray( maybeActions ) ? maybeActions : [ maybeActions ];
+		var r = AndThen( maybeResult );
+		for ( var i in as )
+		{
+			as[i].AddPredicate( p );
+			if ( r != null )
+				as[i].AddResult( r );
+		}
+	}
+};
