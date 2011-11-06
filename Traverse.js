@@ -26,7 +26,10 @@ with ( TraverseCore )
 	{
 		if ( this.IsEligible() )
 			for ( var i in this.Results )
-				this.Results[i]();
+			{
+				if ( this.Results[i][1]() )
+					this.Results[i][0]();
+			}
 		else
 			throw "Can't run " + this.Name;
 	};
@@ -56,7 +59,7 @@ with ( TraverseCore )
 	{
 		ChoiceResults[name] = false;
 		return [
-			function() { ChoiceResults[name] = true; }
+			[ function() { ChoiceResults[name] = true; }, function(){return true;} ]
 		];
 	};
 	ChoiceMade = function( name )
@@ -96,15 +99,17 @@ var TraverseHL = {
 
 with ( TraverseHL )
 {
-	CreateChoice = function( name, actionInitializers, predicates )
+	CreateChoice = function( name, actionInitializers, predicates, additionalResults )
 	{
-		var results = [];
+		var createdActions = [];
 		for ( var i in actionInitializers )
 		{
 			var fullName = actionInitializers[i].Name;
-			results.push( new TraverseCore.Action( fullName, actionInitializers[i].Results.concat( GetChoiceSetter( name, fullName ) ), predicates.concat( GetChoicePredicates( name ) ) ) );
+			var specificPredicates = actionInitializers[i].Predicates;
+			specificPredicates = Array.isArray( specificPredicates ) ? specificPredicates : [];
+			createdActions.push( new TraverseCore.Action( fullName, actionInitializers[i].Results.concat( GetChoiceSetter( name, fullName ) ).concat( additionalResults ), specificPredicates.concat( predicates ).concat( GetChoicePredicates( name ) ) ) );
 		}
-		return results;
+		return createdActions;
 	};
 	GetChoiceSetter = function( name, fullName )
 	{
@@ -120,16 +125,24 @@ var TraverseDSL = {
 	Choice:null,
 	After:null,
 	Options:null,
-	ResolvePredicate:null,
+	OnlyIf:null,
 	AndThen:null,
 	AnyOf:null,
 	AllOf:null,
 	BothOf:null,
-	EitherOf:null
+	EitherOf:null,
+	IsResult:null,
+	Option:null
 };
 
 with ( TraverseDSL )
 {
+	Option = function( name, optionalPredicate )
+	{
+		var optionalResults = Array.prototype.slice.call(arguments).slice( 2 );
+		var predicates = typeof(optionalPredicate == 'function') ? [ optionalPredicate ] : [];
+		return { "Name":name, "Results":optionalResults, "Predicates":predicates };
+	};
 	Options = function() {
 		var result = [];
 		var myOptions;
@@ -139,40 +152,45 @@ with ( TraverseDSL )
 			myOptions = Array.prototype.slice.call(arguments);
 		for ( var i = 0 ; i < myOptions.length ; i++ )
 			if ( typeof( myOptions[i] ) == 'string' )
-				result.push( { "Name":myOptions[i], "Results":[] } );
+				result.push( { "Name":myOptions[i], "Results":[], "Predicates":[] } );
 			else
 				result.push( myOptions[i] );
 		return result;
 	};
-	ResolvePredicate = function( p )
+	OnlyIf = function( p )
 	{
 		if ( typeof(p) == 'string' )
 			return TraverseCore.ChoiceMade( p );
 		return p;
 	};
-	AndThen = function ( r )
+	AndThen = function( r, maybePredicate )
 	{
-		if ( typeof(r) == 'string' )
-			return TraverseCore.GetOnceSetter( r )[0];
-		return r;
+		if ( Array.isArray( r ) )
+			return r;
+		var result = ( typeof(r) == 'string' ) ? TraverseCore.GetOnceSetter( r )[0] : r;
+		if ( maybePredicate != undefined && maybePredicate != null )
+			result = [ result, OnlyIf( maybePredicate ) ];
+		else
+			result = [ result, function(){return true;} ];
+		return result;
 	};
 	Choice = function( name ) {
 		var results = [];
 		var myArgs = Array.prototype.slice.call(arguments).slice(1);
-		while ( typeof( myArgs[ myArgs.length - 1 ] ) == 'function' )
+		while ( Array.isArray( myArgs[ myArgs.length - 1 ] ) )
 			results.push( myArgs.pop() );
 
-		return TraverseHL.CreateChoice( name, Options( myArgs ), results );
+		return TraverseHL.CreateChoice( name, Options( myArgs ), [], results );
 	};
 	After = function( maybePredicate, maybeActions, maybeResult )
 	{
-		var p = ResolvePredicate( maybePredicate );
+		var p = OnlyIf( maybePredicate );
 		var as = Array.isArray( maybeActions ) ? maybeActions : [ maybeActions ];
 		var r = AndThen( maybeResult );
 		for ( var i in as )
 		{
 			as[i].AddPredicate( p );
-			if ( r != null )
+			if ( maybeResult != undefined && maybeResult != null )
 				as[i].AddResult( r );
 		}
 	}
@@ -181,8 +199,8 @@ with ( TraverseDSL )
 		var predicates = arguments;
 		return function()
 		{
-			for ( i=0; i < predicates.length; i++ )
-				if ( TraverseDSL.ResolvePredicate( predicates[ i ] )() )
+			for ( var i = 0; i < predicates.length; i++ )
+				if ( OnlyIf( predicates[ i ] )() )
 					return true;
 			return false;
 		};
@@ -194,8 +212,8 @@ with ( TraverseDSL )
 		var predicates = Array.prototype.slice.call( arguments );
 		return function()
 		{
-			for ( i=0; i < predicates.length ; i++ )
-				if ( !TraverseDSL.ResolvePredicate( predicates[ i ] )() )
+			for ( var i = 0; i < predicates.length ; i++ )
+				if ( !OnlyIf( predicates[ i ] )() )
 					return false;
 			return true;
 		};
