@@ -1,0 +1,47 @@
+body {
+  background-color: #efe;
+  font-family: Hoefler Text, Georgia, serif;
+  font-size: 12pt;
+}
+
+#choices {
+  width: 25em;
+  padding: 1em;
+  margin-left: auto;
+  margin-right: auto;
+  background-color: white;
+  border: 1px black solid;
+  border-radius: 0.25em;
+}
+
+#choices li {
+  list-style-type: none;
+  text-align: center;
+}
+
+#choices button {
+  background-color: #444;
+  color: #ccc;
+  font-family: Hoefler Text, Georgia, serif;
+  font-size: 12pt;
+  border: none;
+  padding: 0.5em;
+  border-radius: 0.5em;
+  cursor: pointer;
+  width: 100%;
+}
+
+#choices button:hover {
+  color: #fff;
+  background-color: #000;
+}
+
+#pastChoices {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  padding: 0.5em;
+  list-style-type: none;
+  text-align: right;
+  font-size: 90%;
+}
