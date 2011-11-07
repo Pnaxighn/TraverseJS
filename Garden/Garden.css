@@ -10,8 +10,18 @@ h1 {
   text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.5);
 }
 
+.body {
+  text-align: center;
+}
+
+.playthrough {
+  display: inline-block;
+  width: 20em;
+  vertical-align: top;
+  margin: 0.5em;
+}
+
 .choices {
-  width: 25em;
   padding: 1em;
   margin-left: auto;
   margin-right: auto;
@@ -51,12 +61,19 @@ h1 {
   background-color: #000;
 }
 
-#pastChoices {
-  position: fixed;
-  right: 0;
-  bottom: 0;
+.pastChoices {
   padding: 0.5em;
   list-style-type: none;
   text-align: right;
+}
+
+.pastChoices li {
   font-size: 90%;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.playthroughs {
+  text-align: center;
 }
