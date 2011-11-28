@@ -5,22 +5,14 @@ if(!Array.isArray) {
 	};  
 }
 
-var TraverseCore = {
-	ActionTable:{},
-	ChoiceResults:{},
-	Action:null,
-	Action_Run:null,
-	Action_IsEligible:null,
-	Action_AddResult:null,
-	Action_AddPredicate:null,
-	ResolveAction:null,
-	GetOnceSetter:null,
-	ChoiceMade:null,
-	ChoiceNotMade:null,
-	GetAllEligibleActions:null,
-	GetOnceAction:null
-};
-with ( TraverseCore )
+function TraverseCore() {
+	this.ActionTable = {};
+	this.ChoiceResults = {};
+	this.HL = new TraverseHL(this);
+	this.DSL = new TraverseDSL(this);
+}
+
+with ( TraverseCore.prototype )
 {
 	Action = function( name, results, predicates )
 	{
@@ -98,13 +90,11 @@ with ( TraverseCore )
 	Action.prototype.AddPredicate = Action_AddPredicate;
 }
 
-var TraverseHL = {
-	CreateChoice:null,
-	GetChoiceSetter:null,
-	GetChoicePredicates:null,
-};
+function TraverseHL(core) {
+	this.Core = core;
+}
 
-with ( TraverseHL )
+with ( TraverseHL.prototype )
 {
 	CreateChoice = function( name, actionInitializers, predicates, additionalResults )
 	{
@@ -114,35 +104,25 @@ with ( TraverseHL )
 			var fullName = actionInitializers[i].Name;
 			var specificPredicates = actionInitializers[i].Predicates;
 			specificPredicates = Array.isArray( specificPredicates ) ? specificPredicates : [];
-			createdActions.push( new TraverseCore.Action( fullName, actionInitializers[i].Results.concat( GetChoiceSetter( name, fullName ) ).concat( additionalResults ), specificPredicates.concat( predicates ).concat( GetChoicePredicates( name ) ) ) );
+			createdActions.push( new this.Core.Action( fullName, actionInitializers[i].Results.concat( GetChoiceSetter( name, fullName ) ).concat( additionalResults ), specificPredicates.concat( predicates ).concat( GetChoicePredicates( name ) ) ) );
 		}
 		return createdActions;
 	};
 	GetChoiceSetter = function( name, fullName )
 	{
-		return TraverseCore.GetOnceSetter( name ).concat( TraverseCore.GetOnceSetter( fullName ) );
+		return this.Core.GetOnceSetter( name ).concat( this.Core.GetOnceSetter( fullName ) );
 	};
 	GetChoicePredicates = function( name )
 	{
-		return [ TraverseCore.ChoiceNotMade( name ) ];
+		return [ this.Core.ChoiceNotMade( name ) ];
 	};
 }
 
-var TraverseDSL = {
-	Choice:null,
-	After:null,
-	Options:null,
-	OnlyIf:null,
-	AndThen:null,
-	AnyOf:null,
-	AllOf:null,
-	BothOf:null,
-	EitherOf:null,
-	IsResult:null,
-	Option:null
-};
+function TraverseDSL(core) {
+	this.Core = core;
+}
 
-with ( TraverseDSL )
+with ( TraverseDSL.prototype )
 {
 	Option = function( name, optionalPredicate )
 	{
@@ -167,14 +147,14 @@ with ( TraverseDSL )
 	OnlyIf = function( p )
 	{
 		if ( typeof(p) == 'string' )
-			return TraverseCore.ChoiceMade( p );
+			return this.Core.ChoiceMade( p );
 		return p;
 	};
 	AndThen = function( r, maybePredicate )
 	{
 		if ( Array.isArray( r ) )
 			return r;
-		var result = ( typeof(r) == 'string' ) ? TraverseCore.GetOnceSetter( r )[0] : r;
+		var result = ( typeof(r) == 'string' ) ? this.Core.GetOnceSetter( r )[0] : r;
 		if ( maybePredicate != undefined && maybePredicate != null )
 			result = [ result, OnlyIf( maybePredicate ) ];
 		else
@@ -187,7 +167,7 @@ with ( TraverseDSL )
 		while ( Array.isArray( myArgs[ myArgs.length - 1 ] ) )
 			results.push( myArgs.pop() );
 
-		return TraverseHL.CreateChoice( name, Options( myArgs ), [], results );
+		return this.Core.HL.CreateChoice( name, Options( myArgs ), [], results );
 	};
 	After = function( maybePredicate, maybeActions, maybeResult )
 	{
