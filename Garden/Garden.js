@@ -1,36 +1,38 @@
 var GardenCore;
 GardenCore.prototype = new TraverseCore;
 
-with (GardenCore.prototype) {
-  SetScene = function(newAct, newScene) {
+_.extend(GardenCore.prototype, {
+  SetScene: function(newAct, newScene) {
+    var core = this;
+    
     return function() {
-      this.act = newAct;
-      this.scene = newScene;
+      core.act = newAct;
+      core.scene = newScene;
     }
-  };
+  },
   
-  ActBreak = function() {
+  ActBreak: function() {
     var changes = "";
   
-    if ( ChoiceMade("Barbara Marries William")() ) {
-      if ( ChoiceMade("They Stay Together")() ) {
+    if ( this.ChoiceMade("Barbara Marries William")() ) {
+      if ( this.ChoiceMade("They Stay Together")() ) {
         changes += "\nBarbara and William are divorced";
       }
-      if ( ChoiceMade("Virginia Moves In With the Couple") ) {
+      if ( this.ChoiceMade("Virginia Moves In With the Couple") ) {
         changes += "\nBarbara and William put Virginia in a nursing home";
       }
     } else {
-      if ( ChoiceMade("They Divorce")() ) {
+      if ( this.ChoiceMade("They Divorce")() ) {
         changes += "\nBarbara and Charles are still together";
       }
-      if ( ChoiceMade("Barbara Cheats")() && ChoiceMade("Charles Cheats")() ) {
+      if ( this.ChoiceMade("Barbara Cheats")() && this.ChoiceMade("Charles Cheats")() ) {
         changes += "\nBarbara did not cheat on Charles, but he cheated on her";
-        if ( ChoiceMade("They Put Virginia In a Nursing Home") ) {
+        if ( this.ChoiceMade("They Put Virginia In a Nursing Home") ) {
           changes += "\nVirginia moved in with Barbara and Charles";
         }
-      } else if ( !(ChoiceMade("Barbara Cheats")()) && !(ChoiceMade("Charles Cheats")()) ) {
+      } else if ( !(this.ChoiceMade("Barbara Cheats")()) && !(this.ChoiceMade("Charles Cheats")()) ) {
         changes += "\nBarbara cheated on Charles, but he remained faithful to her";
-        if ( ChoiceMade("Virginia Moves In With the Couple") ) {
+        if ( this.ChoiceMade("Virginia Moves In With the Couple") ) {
           changes += "\nBarbara and Charles put Virginia in a nursing home";
         }
       }
@@ -39,8 +41,8 @@ with (GardenCore.prototype) {
     if (changes != "") {
       alert("Some chapters are missing from the second half of the book!  You sense that things are different:\n"+changes);
     }
-  };
-}
+  }
+});
 
 function GardenCore() {
   TraverseCore.call(this);
@@ -50,14 +52,14 @@ function GardenCore() {
   
   with (this.DSL) {
     Choice( "Barbara Marries Somebody", "Barbara Marries Charles", "Barbara Marries William",
-      AndThen(SetScene(1, 2)));
+      AndThen(this.SetScene(1, 2)));
   
     After( "Barbara Marries Somebody",
       Choice( "Barbara Chooses Whether to Cheat", "Barbara Cheats", "Barbara Doesn't Cheat" ),
-      AndThen(SetScene(1, 3), OnlyIf(EitherOf("Barbara Marries William", "Charles Chooses Whether to Cheat"))));
+      AndThen(this.SetScene(1, 3), OnlyIf(EitherOf("Barbara Marries William", "Charles Chooses Whether to Cheat"))));
     After( "Barbara Marries Charles",
       Choice( "Charles Chooses Whether to Cheat", "Charles Cheats", "Charles Doesn't Cheat" ),
-      AndThen(SetScene(1, 3), OnlyIf("Barbara Chooses Whether to Cheat")));
+      AndThen(this.SetScene(1, 3), OnlyIf("Barbara Chooses Whether to Cheat")));
       
     After( 
       BothOf( 
@@ -65,31 +67,31 @@ function GardenCore() {
         EitherOf( "Barbara Marries William", "Charles Chooses Whether to Cheat" )
       ),
       Choice( "They Choose Whether to Divorce", "They Divorce", "They Stay Together" ),
-      AndThen(SetScene(1, 4)));
+      AndThen(this.SetScene(1, 4)));
   
     After( "They Choose Whether to Divorce",    
       Choice( "They Decide What to Do With Virginia", "Virginia Moves In With the Couple", "They Put Virginia in a Nursing Home" ),
-      AndThen( ActBreak, SetScene(2, 1) ));
+      AndThen( this.ActBreak, this.SetScene(2, 1) ));
     
     After( BothOf( "They Decide What to Do With Virginia", "Barbara Marries William" ),
       Choice( "Charles Decides Whether to Lend Barbara Money", "Charles Lends Her Money", "Charles Doesn't Lend Her Money" ),
-      AndThen(SetScene(2, 2)));
+      AndThen(this.SetScene(2, 2)));
     After( AllOf( "They Decide What to Do With Virginia", "Barbara Marries Charles", "They Divorce" ),
       Choice( "William Decides Whether to Lend Barbara Money", "William Lends Her Money", "William Doesn't Lend Her Money" ),
-      AndThen(SetScene(2, 2)));
+      AndThen(this.SetScene(2, 2)));
     After( AllOf( "They Decide What to Do With Virginia", "Barbara Marries Charles", "They Stay Together" ),
       Choice( "William Decides Whether to Lend Them Money", "William Lends Them Money", "William Doesn't Lend Them Money" ),
-      AndThen(SetScene(2, 2)));
+      AndThen(this.SetScene(2, 2)));
   
     After( AnyOf( "Charles Decides Whether to Lend Barbara Money", 
                   "William Decides Whether to Lend Barbara Money",
                   "William Decides Whether to Lend Them Money" ),
            Choice( "They Decide Where to Send Stephanie", "They Send Stephanie to Rehab", "They Send Stephanie to Jail" ),
-           AndThen(SetScene(2, 3)));
+           AndThen(this.SetScene(2, 3)));
   
     After( "They Decide Where to Send Stephanie",
       Choice( "They Meet Jason", "They Accept Jason", "They Reject Jason" ),
-      AndThen(SetScene(2, 4)));
+      AndThen(this.SetScene(2, 4)));
         
     After( "They Meet Jason",
       Choice( "Jason and Stephanie Decide What to Do With Their Parents",
@@ -135,15 +137,23 @@ var Playthrough = Backbone.Model.extend({
   },
   
   pastChoices: function() {
-    return _.keys(TraverseCore.ChoiceResults).filter(function (choice) {
+    return _.keys(this.core.ChoiceResults).filter(function (choice) {
       // only return ones that are true in the results table
-      return TraverseCore.ChoiceResults[choice];
-    });
+      return this.core.ChoiceResults[choice];
+    }, this);
   },
   
   eligibleActions: function() {
-    return _.map(TraverseCore.GetAllEligibleActions(),
+    return _.map(this.core.GetAllEligibleActions(),
       function (action) { return new Action(this, action); }, this);
+  },
+  
+  getAct: function() {
+    return this.core.act;
+  },
+  
+  getScene: function() {
+    return this.core.scene;
   }
 });
 
@@ -221,7 +231,7 @@ var SceneCounterView = Backbone.View.extend({
   },
   
   render: function() {
-    $(this.el).html("Act " + GameState.act + ", Scene " + GameState.scene);
+    $(this.el).html("Act " + this.model.getAct() + ", Scene " + this.model.getScene());
   }
 });
 
