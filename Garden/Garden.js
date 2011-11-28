@@ -115,39 +115,7 @@ function GardenCore() {
   }
 }
 
-var Action = Backbone.Model.extend({
-  initialize: function(playthrough, traverseAction) {
-    this.playthrough = playthrough;
-    this.traverseAction = traverseAction;
-  },
-  
-  name: function() {
-    return this.traverseAction.Name;
-  },
-  
-  run: function() {
-    this.traverseAction.Run();
-    this.playthrough.trigger("action");
-  }
-});
-
-var Playthrough = Backbone.Model.extend({
-  initialize: function(core) {
-    this.core = core;
-  },
-  
-  pastChoices: function() {
-    return _.keys(this.core.ChoiceResults).filter(function (choice) {
-      // only return ones that are true in the results table
-      return this.core.ChoiceResults[choice];
-    }, this);
-  },
-  
-  eligibleActions: function() {
-    return _.map(this.core.GetAllEligibleActions(),
-      function (action) { return new Action(this, action); }, this);
-  },
-  
+var GardenPlaythrough = Playthrough.extend({
   getAct: function() {
     return this.core.act;
   },
@@ -155,70 +123,6 @@ var Playthrough = Backbone.Model.extend({
   getScene: function() {
     return this.core.scene;
   }
-});
-
-var ActionView = Backbone.View.extend({
-  
-  tagName: "button",
-  className: "action",
-  
-  events: {
-    "click": "clicked"
-  },
-  
-  render: function() {
-    $(this.el).html(this.model.name());
-    return this;
-  },
-  
-  clicked: function() {
-    this.model.run();
-  }
-});
-
-var EligibleActionsView = Backbone.View.extend({
-  
-  tagName: "ul",
-  className: "choices",
-  
-  initialize: function() {
-    this.model.bind("action", this.render, this);
-  },
-  
-  render: function() {
-    $(this.el).empty();
-
-    _.each(this.model.eligibleActions(), function(action) {
-
-      var actionView = new ActionView({model: action});
-      var listItem = $('<li></li>').append(actionView.render().el);
-      $(this.el).append(listItem);
-
-    }, this);
-
-    return this;
-  }
-});
-
-var PastChoicesView = Backbone.View.extend({
-
-  tagName: "ul",
-  className: "pastChoices",
-  
-  initialize: function() {
-    this.model.bind("action", this.render, this);
-  },
-  
-  render: function() {
-    $(this.el).empty();
-    
-    _.each(this.model.pastChoices(), function(choice) {
-      $(this.el).append("<li>" + choice + "</li>");
-    }, this);
-    
-    return this;
-  }
-  
 });
 
 var SceneCounterView = Backbone.View.extend({
@@ -235,38 +139,27 @@ var SceneCounterView = Backbone.View.extend({
   }
 });
 
-var PlaythroughView = Backbone.View.extend({
+var GardenPlaythroughView = PlaythroughView.extend({
   
-  tagName: "div",
-  className: "playthrough",
-
-  initialize: function() {
+  initialize: function(options) {
+    this.constructor.__super__.initialize.apply(this, [options]);
+    
     this.sceneCounterView = new SceneCounterView({ 
       model: this.model,
       el: this.$('.sceneCounter')
     });
-    this.eligibleActionsView = new EligibleActionsView({ 
-      model: this.model,
-      el: this.$('.choices')
-    });
-    this.pastChoicesView = new PastChoicesView({ 
-      model: this.model,
-      el: this.$('.pastChoices')
-    });
   },
   
   render: function() {
-    var subviews = [this.sceneCounterView, this.eligibleActionsView, this.pastChoicesView];
-    _.each(subviews, function(subview) { subview.render(); });
-    
-    return this;
+    this.sceneCounterView.render();
+    return this.constructor.__super__.render.apply(this, []);
   }
   
 });
 
 $(function() {
   $('.playthrough').each(function() {
-    var playthrough = new Playthrough(new GardenCore());
-    new PlaythroughView({ model: playthrough, el: this }).render();
+    var playthrough = new GardenPlaythrough(new GardenCore());
+    new GardenPlaythroughView({ model: playthrough, el: this }).render();
   });
 });
