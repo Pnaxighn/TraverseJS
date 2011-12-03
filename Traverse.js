@@ -14,8 +14,8 @@ function TraverseCore() {
 
 TraverseCore.prototype =
 {
-	Action: function( name, results, predicates ) {
-		var action = new TraverseAction(name, results, predicates);
+	Action: function( name, results, predicates, auto ) {
+		var action = new TraverseAction(name, results, predicates, auto, this);
 		this.ActionTable[name] = action;
 		return action;
 	},
@@ -60,17 +60,36 @@ TraverseCore.prototype =
 		return result;
 	},
 	
+	DoAutoActions: function()
+	{
+		for ( var actName in this.ActionTable )
+		{
+			var act = this.ResolveAction( actName );
+			if ( act.IsEligible() && act.Auto )
+				act.Run();
+		}
+	},
+	
 	GetOnceAction: function( name, results, predicates )
 	{
 		return this.Action( name, results.concat( this.GetOnceSetter( name ) ), predicates.concat( this.ChoiceNotMade( name ) ) );
+	},
+	
+	GetOnceTrigger: function( name, results, predicates )
+	{
+		return this.Action( name, results.concat( this.GetOnceSetter( name ) ), predicates.concat( this.ChoiceNotMade( name ) ), true );
 	}
 }
 
-function TraverseAction( name, results, predicates )
+//Be real careful with passing in auto -- you are responsible for avoiding
+//infinite loops!
+function TraverseAction( name, results, predicates, auto, core )
 {
 	this.Name = name;
 	this.Results = results;
 	this.Predicates = predicates;
+	this.Auto = auto;
+	this.Core = core;
 }
 
 TraverseAction.prototype =
@@ -78,11 +97,14 @@ TraverseAction.prototype =
 	Run: function()
 	{
 		if ( this.IsEligible() )
+		{
 			for ( var i in this.Results )
 			{
 				if ( this.Results[i][1]() )
 					this.Results[i][0]();
 			}
+			this.Core.DoAutoActions();
+		}
 		else
 			throw "Can't run " + this.Name;
 	},
@@ -120,6 +142,11 @@ TraverseHL.prototype.CreateChoice = function( name, actionInitializers, predicat
 	}
 	return createdActions;
 };
+
+TraverseHL.prototype.CreateTrigger = function( name, predicates, results )
+{
+	return this.Core.GetOnceTrigger( name, results, predicates );
+}
 
 TraverseHL.prototype.GetChoiceSetter = function( name, fullName )
 {
@@ -184,6 +211,21 @@ TraverseDSL.prototype.Choice = function( name ) {
 
 	return this.Core.HL.CreateChoice( name, this.Options( myArgs ), [], results );
 };
+
+TraverseDSL.prototype.When = function( maybePredicate, maybeResult )
+{
+	var minChar = "a".charCodeAt();
+	var maxChar = "z".charCodeAt();
+	
+	var name = "";
+	
+	for ( var i = 0 ; i < 8 ; i++ )
+		name += String.fromCharCode( Math.floor( Math.random() * ( maxChar - minChar ) + minChar ) );
+
+	var p = this.OnlyIf( maybePredicate );
+	var r = this.AndThen( maybeResult );
+	return this.Core.HL.CreateTrigger( name, [ p ], [ r ] );
+}
 
 TraverseDSL.prototype.After = function( maybePredicate, maybeActions, maybeResult )
 {

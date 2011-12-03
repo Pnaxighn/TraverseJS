@@ -60,6 +60,8 @@ function GardenCore() {
     After( "Barbara Marries Charles",
       Choice( "Charles Chooses Whether to Cheat", "Charles Cheats", "Charles Doesn't Cheat" ),
       AndThen(this.SetScene(1, 3), OnlyIf("Barbara Chooses Whether to Cheat")));
+    
+    When( EitherOf("Barbara Marries William", "Charles Chooses Whether to Cheat"), function(){ alert('yo ho ho' ); } );
       
     After( 
       BothOf( 
