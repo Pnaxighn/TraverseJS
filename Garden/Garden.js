@@ -124,6 +124,45 @@ var GardenPlaythrough = Playthrough.extend({
   
   getScene: function() {
     return this.core.scene;
+  },
+  
+  getChoiceLetters: function() {
+    var letters = [];
+    
+    if (this.core.ChoiceMade("Barbara Marries Charles")())
+      letters.push("A");
+    if (this.core.ChoiceMade("Barbara Marries William")())
+      letters.push("B");
+    if (this.core.ChoiceMade("Barbara Cheats")())
+      letters.push("C");
+    if (this.core.ChoiceMade("Barbara Doesn't Cheat")())
+      letters.push("D");
+    if (this.core.ChoiceMade("Charles Cheats")())
+      letters.push("E");
+    if (this.core.DSL.EitherOf("Charles Doesn't Cheat", "Barbara Marries William")())
+      letters.push("F");
+    if (this.core.ChoiceMade("They Divorce")())
+      letters.push("G");
+    if (this.core.ChoiceMade("They Stay Together")())
+      letters.push("H");
+    if (this.core.ChoiceMade("Virginia Moves In With the Couple")())
+      letters.push("I");
+    if (this.core.ChoiceMade("They Put Virginia in a Nursing Home")())
+      letters.push("J");
+    if (this.core.DSL.AnyOf("Charles Lends Her Money", "William Lends Her Money", "William Lends Them Money")())
+      letters.push("K");
+    if (this.core.DSL.AnyOf("Charles Doesn't Lend Her Money", "William Doesn't Lend Her Money", "William Doesn't Lend Them Money")())
+      letters.push("L");
+    if (this.core.ChoiceMade("They Send Stephanie to Rehab")())
+      letters.push("M");
+    if (this.core.ChoiceMade("They Send Stephanie to Jail")())
+      letters.push("N");
+    if (this.core.ChoiceMade("They Accept Jason")())
+      letters.push("O");
+    if (this.core.ChoiceMade("They Reject Jason")())
+      letters.push("P");
+    
+    return letters;
   }
 });
 
@@ -141,27 +180,29 @@ var SceneCounterView = Backbone.View.extend({
   }
 });
 
-var GardenPlaythroughView = PlaythroughView.extend({
+var ChoiceLettersView = Backbone.View.extend({
+
+  tagName: "div",
+  className: "choiceLetters",
   
-  initialize: function(options) {
-    this.constructor.__super__.initialize.apply(this, [options]);
-    
-    this.sceneCounterView = new SceneCounterView({ 
-      model: this.model,
-      el: this.$('.sceneCounter')
-    });
+  initialize: function() {
+    this.model.bind("action", this.render, this);
   },
   
   render: function() {
-    this.sceneCounterView.render();
-    return this.constructor.__super__.render.apply(this, []);
+    var letters = this.model.getChoiceLetters().join("");
+    if (letters == "")
+      letters = "&nbsp;";
+      
+    $(this.el).html(letters);
   }
-  
 });
 
 $(function() {
   $('.playthrough').each(function() {
     var playthrough = new GardenPlaythrough(new GardenCore());
-    new GardenPlaythroughView({ model: playthrough, el: this }).render();
+    new PlaythroughView({ model: playthrough, el: this }).render();
+    new SceneCounterView({ model: playthrough, el: $(this).find('.sceneCounter').get(0) }).render();
+    new ChoiceLettersView({ model: playthrough, el: $(this).find('.choiceLetters').get(0) }).render();
   });
 });
