@@ -21,8 +21,16 @@ var Playthrough = Backbone.Model.extend({
   
   pastChoices: function() {
     return _.keys(this.core.ChoiceResults).filter(function (choice) {
+
+      // don't include Auto actions, they're an implementation detail    
+      var traverseAction = this.core.ActionTable[choice];
+      if (traverseAction && traverseAction.Auto) {
+        return false;
+      }
+    
       // only return ones that are true in the results table
       return this.core.ChoiceResults[choice];
+      
     }, this);
   },
   
