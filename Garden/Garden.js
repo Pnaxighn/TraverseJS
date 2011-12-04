@@ -53,21 +53,21 @@ function GardenCore() {
   with (this.DSL) {
     Choice( "Barbara Marries Somebody", "Barbara Marries Charles", "Barbara Marries William",
       AndThen(this.SetScene(1, 2)));
-  
+
+    // Charles can choose to cheat but William can't.  Barbara has a choice whether to cheat either way.
     After( "Barbara Marries Somebody",
-      Choice( "Barbara Chooses Whether to Cheat", "Barbara Cheats", "Barbara Doesn't Cheat" ),
-      AndThen(this.SetScene(1, 3), OnlyIf(EitherOf("Barbara Marries William", "Charles Chooses Whether to Cheat"))));
+      Choice( "Barbara Chooses Whether to Cheat", "Barbara Cheats", "Barbara Doesn't Cheat" ) );
     After( "Barbara Marries Charles",
-      Choice( "Charles Chooses Whether to Cheat", "Charles Cheats", "Charles Doesn't Cheat" ),
-      AndThen(this.SetScene(1, 3), OnlyIf("Barbara Chooses Whether to Cheat")));
-    
-    When( EitherOf("Barbara Marries William", "Charles Chooses Whether to Cheat"), function(){ alert('yo ho ho' ); } );
+      Choice( "Charles Chooses Whether to Cheat", "Charles Cheats", "Charles Doesn't Cheat" ) );
+
+    // The scene is over when they've exhausted their choices.
+    var scene3conditions =  BothOf( 
+      "Barbara Chooses Whether to Cheat", 
+      EitherOf( "Barbara Marries William", "Charles Chooses Whether to Cheat" )
+    ); 
+    When( scene3conditions, this.SetScene(1, 3) );
       
-    After( 
-      BothOf( 
-        "Barbara Chooses Whether to Cheat", 
-        EitherOf( "Barbara Marries William", "Charles Chooses Whether to Cheat" )
-      ),
+    After( scene3conditions,
       Choice( "They Choose Whether to Divorce", "They Divorce", "They Stay Together" ),
       AndThen(this.SetScene(1, 4)));
   
