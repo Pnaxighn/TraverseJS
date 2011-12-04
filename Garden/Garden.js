@@ -76,14 +76,14 @@ function GardenCore() {
       AndThen( this.ActBreak, this.SetScene(2, 1) ));
     
     After( BothOf( "They Decide What to Do With Virginia", "Barbara Marries William" ),
-      Choice( "Charles Decides Whether to Lend Barbara Money", "Charles Lends Her Money", "Charles Doesn't Lend Her Money" ),
-      AndThen(this.SetScene(2, 2)));
+      Choice( "Charles Decides Whether to Lend Barbara Money", "Charles Lends Her Money", "Charles Doesn't Lend Her Money" ));
     After( AllOf( "They Decide What to Do With Virginia", "Barbara Marries Charles", "They Divorce" ),
-      Choice( "William Decides Whether to Lend Barbara Money", "William Lends Her Money", "William Doesn't Lend Her Money" ),
-      AndThen(this.SetScene(2, 2)));
+      Choice( "William Decides Whether to Lend Barbara Money", "William Lends Her Money", "William Doesn't Lend Her Money" ));
     After( AllOf( "They Decide What to Do With Virginia", "Barbara Marries Charles", "They Stay Together" ),
-      Choice( "William Decides Whether to Lend Them Money", "William Lends Them Money", "William Doesn't Lend Them Money" ),
-      AndThen(this.SetScene(2, 2)));
+      Choice( "William Decides Whether to Lend Them Money", "William Lends Them Money", "William Doesn't Lend Them Money" ));      
+
+    When( AnyOf( "Charles Decides Whether to Lend Barbara Money", "William Decides Whether to Lend Barbara Money", "William Decides Whether to Lend Them Money" ),
+      this.SetScene(2, 2));
   
     After( AnyOf( "Charles Decides Whether to Lend Barbara Money", 
                   "William Decides Whether to Lend Barbara Money",
