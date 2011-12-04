@@ -75,6 +75,9 @@ function GardenCore() {
       Choice( "They Decide What to Do With Virginia", "Virginia Moves In With the Couple", "They Put Virginia in a Nursing Home" ),
       AndThen( this.ActBreak, this.SetScene(2, 1) ));
     
+    // Scene 2.1 is basically just a question of whether the other brother lends money or
+    // not.  Unfortunately, at this point in the game, there are several variables that
+    // affect the phrasing of that choice, so we say it a few different ways depending.
     After( BothOf( "They Decide What to Do With Virginia", "Barbara Marries William" ),
       Choice( "Charles Decides Whether to Lend Barbara Money", "Charles Lends Her Money", "Charles Doesn't Lend Her Money" ));
     After( AllOf( "They Decide What to Do With Virginia", "Barbara Marries Charles", "They Divorce" ),
@@ -82,6 +85,7 @@ function GardenCore() {
     After( AllOf( "They Decide What to Do With Virginia", "Barbara Marries Charles", "They Stay Together" ),
       Choice( "William Decides Whether to Lend Them Money", "William Lends Them Money", "William Doesn't Lend Them Money" ));      
 
+    // Any one of the above three choices ends the scene.
     var scene22conditions = AnyOf( "Charles Decides Whether to Lend Barbara Money", 
       "William Decides Whether to Lend Barbara Money",
       "William Decides Whether to Lend Them Money" );
