@@ -61,13 +61,13 @@ function GardenCore() {
       Choice( "Charles Chooses Whether to Cheat", "Charles Cheats", "Charles Doesn't Cheat" ) );
 
     // The scene is over when they've exhausted their choices.
-    var scene3conditions =  BothOf( 
+    var scene13conditions =  BothOf( 
       "Barbara Chooses Whether to Cheat", 
       EitherOf( "Barbara Marries William", "Charles Chooses Whether to Cheat" )
     ); 
-    When( scene3conditions, this.SetScene(1, 3) );
+    When( scene13conditions, this.SetScene(1, 3) );
       
-    After( scene3conditions,
+    After( scene13conditions,
       Choice( "They Choose Whether to Divorce", "They Divorce", "They Stay Together" ),
       AndThen(this.SetScene(1, 4)));
   
@@ -82,14 +82,14 @@ function GardenCore() {
     After( AllOf( "They Decide What to Do With Virginia", "Barbara Marries Charles", "They Stay Together" ),
       Choice( "William Decides Whether to Lend Them Money", "William Lends Them Money", "William Doesn't Lend Them Money" ));      
 
-    When( AnyOf( "Charles Decides Whether to Lend Barbara Money", "William Decides Whether to Lend Barbara Money", "William Decides Whether to Lend Them Money" ),
-      this.SetScene(2, 2));
+    var scene22conditions = AnyOf( "Charles Decides Whether to Lend Barbara Money", 
+      "William Decides Whether to Lend Barbara Money",
+      "William Decides Whether to Lend Them Money" );
+    When( scene22conditions, this.SetScene(2, 2));
   
-    After( AnyOf( "Charles Decides Whether to Lend Barbara Money", 
-                  "William Decides Whether to Lend Barbara Money",
-                  "William Decides Whether to Lend Them Money" ),
-           Choice( "They Decide Where to Send Stephanie", "They Send Stephanie to Rehab", "They Send Stephanie to Jail" ),
-           AndThen(this.SetScene(2, 3)));
+    After( scene22conditions,
+       Choice( "They Decide Where to Send Stephanie", "They Send Stephanie to Rehab", "They Send Stephanie to Jail" ),
+       AndThen(this.SetScene(2, 3)));
   
     After( "They Decide Where to Send Stephanie",
       Choice( "They Meet Jason", "They Accept Jason", "They Reject Jason" ),
