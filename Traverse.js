@@ -5,225 +5,265 @@ if(!Array.isArray) {
 	};  
 }
 
-var TraverseCore = {
-	ActionTable:{},
-	ChoiceResults:{},
-	Action:null,
-	Action_Run:null,
-	Action_IsEligible:null,
-	Action_AddResult:null,
-	Action_AddPredicate:null,
-	ResolveAction:null,
-	GetOnceSetter:null,
-	ChoiceMade:null,
-	ChoiceNotMade:null,
-	GetAllEligibleActions:null,
-	GetOnceAction:null
-};
-with ( TraverseCore )
+function TraverseCore() {
+	this.ActionTable = {};
+	this.ChoiceResults = {};
+	this.HL = new TraverseHL(this);
+	this.DSL = new TraverseDSL(this);
+}
+
+TraverseCore.prototype =
 {
-	Action = function( name, results, predicates )
+	Action: function( name, results, predicates, auto ) {
+		var action = new TraverseAction(name, results, predicates, auto, this);
+		this.ActionTable[name] = action;
+		return action;
+	},
+	
+	ResolveAction: function(nameOrAction)
 	{
-		this.Name = name;
-		this.Results = results;
-		this.Predicates = predicates;
-		ActionTable[name] = this;
-	};
-	Action_Run = function()
+		if ( typeof( nameOrAction ) == 'string' )
+			return this.ActionTable[nameOrAction];
+		return nameOrAction;
+	},
+	
+	GetOnceSetter: function( name )
+	{
+		var choiceResults = this.ChoiceResults;
+		choiceResults[name] = false;
+		return [
+			[ function() { choiceResults[name] = true; }, function(){return true;} ]
+		];
+	},
+	
+	ChoiceMade: function( name )
+	{
+		var choiceResults = this.ChoiceResults;
+		return function(){ return choiceResults[name]; };
+	},
+	
+	ChoiceNotMade: function( name )
+	{
+		var choiceResults = this.ChoiceResults;
+		return function(){ return !choiceResults[name]; };
+	},
+	
+	GetAllEligibleActions: function()
+	{
+		var result = [];
+		for ( var actName in this.ActionTable )
+		{
+			var act = this.ResolveAction( actName );
+			if ( act.IsEligible() )
+				result.push( act );
+		}
+		return result;
+	},
+	
+	DoAutoActions: function()
+	{
+		for ( var actName in this.ActionTable )
+		{
+			var act = this.ResolveAction( actName );
+			if ( act.IsEligible() && act.Auto )
+				act.Run();
+		}
+	},
+	
+	GetOnceAction: function( name, results, predicates )
+	{
+		return this.Action( name, results.concat( this.GetOnceSetter( name ) ), predicates.concat( this.ChoiceNotMade( name ) ) );
+	},
+	
+	GetOnceTrigger: function( name, results, predicates )
+	{
+		return this.Action( name, results.concat( this.GetOnceSetter( name ) ), predicates.concat( this.ChoiceNotMade( name ) ), true );
+	}
+}
+
+//Be real careful with passing in auto -- you are responsible for avoiding
+//infinite loops!
+function TraverseAction( name, results, predicates, auto, core )
+{
+	this.Name = name;
+	this.Results = results;
+	this.Predicates = predicates;
+	this.Auto = auto;
+	this.Core = core;
+}
+
+TraverseAction.prototype =
+{
+	Run: function()
 	{
 		if ( this.IsEligible() )
+		{
 			for ( var i in this.Results )
 			{
 				if ( this.Results[i][1]() )
 					this.Results[i][0]();
 			}
+			this.Core.DoAutoActions();
+		}
 		else
 			throw "Can't run " + this.Name;
-	};
-	Action_IsEligible = function()
+	},
+	IsEligible: function()
 	{
 		var OK = true;
 		if ( this.Predicates != null )
 			for ( var i in this.Predicates )
 				OK = OK && this.Predicates[i]();
 		return OK;
-	};
-	Action_AddResult = function( f )
+	},
+	AddResult: function( f )
 	{
 		this.Results.push( f );
-	};
-	Action_AddPredicate = function ( f )
+	},
+	AddPredicate: function ( f )
 	{
 		this.Predicates.push( f );
-	};
-	ResolveAction = function(nameOrAction)
-	{
-		if ( typeof( nameOrAction ) == 'string' )
-			return ActionTable[nameOrAction];
-		return nameOrAction;
-	};
-	GetOnceSetter = function( name )
-	{
-		ChoiceResults[name] = false;
-		return [
-			[ function() { ChoiceResults[name] = true; }, function(){return true;} ]
-		];
-	};
-	ChoiceMade = function( name )
-	{
-		return function(){ return ChoiceResults[name]; };
-	};
-	ChoiceNotMade = function( name )
-	{
-		return function(){ return !ChoiceResults[name]; };
-	};
-	GetAllEligibleActions = function()
-	{
-		var result = [];
-		for ( var actName in ActionTable )
-		{
-			var act = ResolveAction( actName );
-			if ( act.IsEligible() )
-				result.push( act );
-		}
-		return result;
-	};
-	GetOnceAction = function( name, results, predicates )
-	{
-		new Action( name, results.concat( GetOnceSetter( name ) ), predicates.concat( ChoiceNotMade( name ) ) );
-	};
-	Action.prototype.Run = Action_Run;
-	Action.prototype.IsEligible = Action_IsEligible;
-	Action.prototype.AddResult = Action_AddResult;
-	Action.prototype.AddPredicate = Action_AddPredicate;
-}
-
-var TraverseHL = {
-	CreateChoice:null,
-	GetChoiceSetter:null,
-	GetChoicePredicates:null,
+	}
 };
 
-with ( TraverseHL )
-{
-	CreateChoice = function( name, actionInitializers, predicates, additionalResults )
-	{
-		var createdActions = [];
-		for ( var i in actionInitializers )
-		{
-			var fullName = actionInitializers[i].Name;
-			var specificPredicates = actionInitializers[i].Predicates;
-			specificPredicates = Array.isArray( specificPredicates ) ? specificPredicates : [];
-			createdActions.push( new TraverseCore.Action( fullName, actionInitializers[i].Results.concat( GetChoiceSetter( name, fullName ) ).concat( additionalResults ), specificPredicates.concat( predicates ).concat( GetChoicePredicates( name ) ) ) );
-		}
-		return createdActions;
-	};
-	GetChoiceSetter = function( name, fullName )
-	{
-		return TraverseCore.GetOnceSetter( name ).concat( TraverseCore.GetOnceSetter( fullName ) );
-	};
-	GetChoicePredicates = function( name )
-	{
-		return [ TraverseCore.ChoiceNotMade( name ) ];
-	};
+function TraverseHL(core) {
+	this.Core = core;
 }
 
-var TraverseDSL = {
-	Choice:null,
-	After:null,
-	Options:null,
-	OnlyIf:null,
-	AndThen:null,
-	AnyOf:null,
-	AllOf:null,
-	BothOf:null,
-	EitherOf:null,
-	IsResult:null,
-	Option:null
+TraverseHL.prototype.CreateChoice = function( name, actionInitializers, predicates, additionalResults )
+{
+	var createdActions = [];
+	for ( var i in actionInitializers )
+	{
+		var fullName = actionInitializers[i].Name;
+		var specificPredicates = actionInitializers[i].Predicates;
+		specificPredicates = Array.isArray( specificPredicates ) ? specificPredicates : [];
+		createdActions.push( this.Core.Action( fullName, actionInitializers[i].Results.concat( this.GetChoiceSetter( name, fullName ) ).concat( additionalResults ), specificPredicates.concat( predicates ).concat( this.GetChoicePredicates( name ) ) ) );
+	}
+	return createdActions;
 };
 
-with ( TraverseDSL )
+TraverseHL.prototype.CreateTrigger = function( name, predicates, results )
 {
-	Option = function( name, optionalPredicate )
-	{
-		var optionalResults = Array.prototype.slice.call(arguments).slice( 2 );
-		var predicates = typeof(optionalPredicate == 'function') ? [ optionalPredicate ] : [];
-		return { "Name":name, "Results":optionalResults, "Predicates":predicates };
-	};
-	Options = function() {
-		var result = [];
-		var myOptions;
-		if ( Array.isArray( arguments[0] ) )
-			myOptions = arguments[0];
-		else
-			myOptions = Array.prototype.slice.call(arguments);
-		for ( var i = 0 ; i < myOptions.length ; i++ )
-			if ( typeof( myOptions[i] ) == 'string' )
-				result.push( { "Name":myOptions[i], "Results":[], "Predicates":[] } );
-			else
-				result.push( myOptions[i] );
-		return result;
-	};
-	OnlyIf = function( p )
-	{
-		if ( typeof(p) == 'string' )
-			return TraverseCore.ChoiceMade( p );
-		return p;
-	};
-	AndThen = function( r, maybePredicate )
-	{
-		if ( Array.isArray( r ) )
-			return r;
-		var result = ( typeof(r) == 'string' ) ? TraverseCore.GetOnceSetter( r )[0] : r;
-		if ( maybePredicate != undefined && maybePredicate != null )
-			result = [ result, OnlyIf( maybePredicate ) ];
-		else
-			result = [ result, function(){return true;} ];
-		return result;
-	};
-	Choice = function( name ) {
-		var results = [];
-		var myArgs = Array.prototype.slice.call(arguments).slice(1);
-		while ( Array.isArray( myArgs[ myArgs.length - 1 ] ) )
-			results.push( myArgs.pop() );
+	return this.Core.GetOnceTrigger( name, results, predicates );
+}
 
-		return TraverseHL.CreateChoice( name, Options( myArgs ), [], results );
-	};
-	After = function( maybePredicate, maybeActions, maybeResult )
-	{
-		var p = OnlyIf( maybePredicate );
-		var as = Array.isArray( maybeActions ) ? maybeActions : [ maybeActions ];
-		var r = AndThen( maybeResult );
-		for ( var i in as )
-		{
-			as[i].AddPredicate( p );
-			if ( maybeResult != undefined && maybeResult != null )
-				as[i].AddResult( r );
-		}
-	}
-	AnyOf = function()
-	{
-		var predicates = arguments;
-		return function()
-		{
-			for ( var i = 0; i < predicates.length; i++ )
-				if ( OnlyIf( predicates[ i ] )() )
-					return true;
-			return false;
-		};
-	}
-	EitherOf = AnyOf;
+TraverseHL.prototype.GetChoiceSetter = function( name, fullName )
+{
+	return this.Core.GetOnceSetter( name ).concat( this.Core.GetOnceSetter( fullName ) );
+};
+
+TraverseHL.prototype.GetChoicePredicates = function( name )
+{
+	return [ this.Core.ChoiceNotMade( name ) ];
+};
+
+function TraverseDSL(core) {
+	this.Core = core;
+}
+
+TraverseDSL.prototype.Option = function( name, optionalPredicate )
+{
+	var optionalResults = Array.prototype.slice.call(arguments).slice( 2 );
+	var predicates = typeof(optionalPredicate == 'function') ? [ optionalPredicate ] : [];
+	return { "Name":name, "Results":optionalResults, "Predicates":predicates };
+};
+
+TraverseDSL.prototype.Options = function() {
+	var result = [];
+	var myOptions;
+	if ( Array.isArray( arguments[0] ) )
+		myOptions = arguments[0];
+	else
+		myOptions = Array.prototype.slice.call(arguments);
+	for ( var i = 0 ; i < myOptions.length ; i++ )
+		if ( typeof( myOptions[i] ) == 'string' )
+			result.push( { "Name":myOptions[i], "Results":[], "Predicates":[] } );
+		else
+			result.push( myOptions[i] );
+	return result;
+};
+
+TraverseDSL.prototype.OnlyIf = function( p )
+{
+	if ( typeof(p) == 'string' )
+		return this.Core.ChoiceMade( p );
+	return p;
+};
+
+TraverseDSL.prototype.AndThen = function( r, maybePredicate )
+{
+	if ( Array.isArray( r ) )
+		return r;
+	var result = ( typeof(r) == 'string' ) ? this.Core.GetOnceSetter( r )[0] : r;
+	if ( maybePredicate != undefined && maybePredicate != null )
+		result = [ result, this.OnlyIf( maybePredicate ) ];
+	else
+		result = [ result, function(){return true;} ];
+	return result;
+};
+
+TraverseDSL.prototype.Choice = function( name ) {
+	var results = [];
+	var myArgs = Array.prototype.slice.call(arguments).slice(1);
+	while ( Array.isArray( myArgs[ myArgs.length - 1 ] ) )
+		results.push( myArgs.pop() );
+
+	return this.Core.HL.CreateChoice( name, this.Options( myArgs ), [], results );
+};
+
+TraverseDSL.prototype.When = function( maybePredicate, maybeResult )
+{
+	var minChar = "a".charCodeAt();
+	var maxChar = "z".charCodeAt();
 	
-	AllOf = function()
+	var name = "";
+	
+	for ( var i = 0 ; i < 8 ; i++ )
+		name += String.fromCharCode( Math.floor( Math.random() * ( maxChar - minChar ) + minChar ) );
+
+	var p = this.OnlyIf( maybePredicate );
+	var r = this.AndThen( maybeResult );
+	return this.Core.HL.CreateTrigger( name, [ p ], [ r ] );
+}
+
+TraverseDSL.prototype.After = function( maybePredicate, maybeActions, maybeResult )
+{
+	var p = this.OnlyIf( maybePredicate );
+	var as = Array.isArray( maybeActions ) ? maybeActions : [ maybeActions ];
+	var r = this.AndThen( maybeResult );
+	for ( var i in as )
 	{
-		var predicates = Array.prototype.slice.call( arguments );
-		return function()
-		{
-			for ( var i = 0; i < predicates.length ; i++ )
-				if ( !OnlyIf( predicates[ i ] )() )
-					return false;
-			return true;
-		};
+		as[i].AddPredicate( p );
+		if ( maybeResult != undefined && maybeResult != null )
+			as[i].AddResult( r );
 	}
-	BothOf = AllOf;	
-};
+}
+
+TraverseDSL.prototype.AnyOf = function()
+{
+	var dsl = this;
+	var predicates = arguments;
+	return function()
+	{
+		for ( var i = 0; i < predicates.length; i++ )
+			if ( dsl.OnlyIf( predicates[ i ] )() )
+				return true;
+		return false;
+	};
+}
+TraverseDSL.prototype.EitherOf = TraverseDSL.prototype.AnyOf;
+	
+TraverseDSL.prototype.AllOf = function()
+{
+	var dsl = this;
+	var predicates = Array.prototype.slice.call( arguments );
+	return function()
+	{
+		for ( var i = 0; i < predicates.length ; i++ )
+			if ( !dsl.OnlyIf( predicates[ i ] )() )
+				return false;
+		return true;
+	};
+}
+TraverseDSL.prototype.BothOf = TraverseDSL.prototype.AllOf;	
